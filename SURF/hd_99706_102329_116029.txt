@@ -14,6 +14,7 @@ Byte-by-byte Description of file: apj522694t4_mrt.txt
   19- 24 F6.1   m/s     RVel   Radial velocity
   26- 30 F5.3   m/s   e_RVel   The 1{sigma} uncertainty in RVel
 --------------------------------------------------------------------------------
+system_identifier JD-2.4e6 RV sigma_RV
 HD_156279 12832.9 -436.3 1.084
 HD_156279 13074.1 -191.6 1.302
 HD_156279 13238.8 -465.2 0.870
