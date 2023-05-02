@@ -1,0 +1,11 @@
+# R
+**/*.Rproj.user
+**/*.Rhistory
+**/*.RData
+**/*.Ruserdata
+# ignore the ipynb checkpoints
+**/.ipynb_checkpoints
+# ignore .h5 binaries
+**/*.h5
+# ignore the PyCharm .idea folder
+.idea/
