@@ -168,8 +168,8 @@ def get_rvs(params, times, integrator, time_base, auday_ms = AUDAY_MS):
     sim_backwards = sim.copy()
     sim_backwards.dt *= -1  # set timestep to be negative if integrating backwards
 
-    forward_times = np.array(list(filter(lambda x: x - post.model.time_base >= 0, times)))
-    backward_times = np.array(list(filter(lambda x: x - post.model.time_base < 0, times)))
+    forward_times = np.array(list(filter(lambda x: x - time_base >= 0, times)))
+    backward_times = np.array(list(filter(lambda x: x - time_base < 0, times)))
 
     # initialize rvs
     rv_forward = np.zeros(len(forward_times))
@@ -205,7 +205,7 @@ def neg_log_likelihood(params, data = hd_data):
     # LOG LIKELIHOOD
     obs_y = data.RV_mlc_nzp  # observed RVs
     
-    synth_y = get_rvs(params, data.BJD, 'ias15')  # RVs from the rebound simulation
+    synth_y = get_rvs(params, data.BJD, 'ias15', time_base=obs_time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
     # # compute variance
     # variance = obs_yerr ** 2  # + (synth_y * np.exp(log_f)) ** 2  # assuming simply that variance is underestimated by some amount f
@@ -232,7 +232,7 @@ def get_nbody_resids(params, integrator, data = hd_data):
 # OPTIMIZE USING OPTIMIZE.MINIMIZE WITH THE LOG LIKELIHOOD INSTEAD OF JUST NORMAL LEAST-SQUARES FIRST AND COMPARE
 
 # bounds of (0, 1) for sin(i), everything else can vary however: bounds format for optimize.minimize()
-bounds = ((None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (0, 1) ,(None, None))
+bounds = ((None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (None, None), (0, 1))
 
 best_fit = optimize.minimize(neg_log_likelihood, x0=np.array(fit_params), method='Nelder-Mead', bounds=bounds, options={'maxiter': int(1e5), 'maxfev': int(1e5)})  # optimization
 
@@ -272,7 +272,7 @@ def log_likelihood(params, data=hd_data):
     Implements the log likelihood using the same method as neg_log_likelihood above
     """
     obs_y = data.RV_mlc_nzp  # observed RVs
-    synth_y = get_rvs(params, data.BJD, 'ias15')  # RVs from the rebound simulation
+    synth_y = get_rvs(params, data.BJD, 'ias15', time_base=obs_time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
 
     # compute variance
