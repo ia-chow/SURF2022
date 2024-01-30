@@ -591,7 +591,8 @@ best = best_fit_jitter2.x  # best-fit solution is our center
 nwalkers = 50  # number of walkers to use in MCMC
 ndim = len(best)  # number of dimensions in parameter space
 # gaussian ball of 50 walkers with variance equal to cov * 1/100 and centered on the best-fit solution
-pos = np.random.multivariate_normal(best, cov * 5e-5, size = nwalkers)
+np.random.seed(seed=1234)
+pos = np.random.multivariate_normal(best, cov * 1e-5, size = nwalkers)
 # PATCHING ARCSIN TO MAKE SURE THAT WE DON'T START WITH HALF THE WALKERS HAVING SIN(I) > 1:
 pos[:, -2][pos[:,-2] > 1] = 2 - pos[:, -2][pos[:,-2] > 1]
 
