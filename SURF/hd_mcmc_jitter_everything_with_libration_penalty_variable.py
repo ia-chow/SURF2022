@@ -608,11 +608,11 @@ for alib in alibs:
     backend.reset(nwalkers, ndim)
     
     steps = 50000  # try 50000 steps with multiprocessing on the cluster
-    
+
     # RUNNING MCMC (parallelization):
     
     with Pool() as pool:
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=alib, pool = pool, backend = backend)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=[alib], pool = pool, backend = backend)
         sampler.run_mcmc(pos, steps, progress=True)  # this takes 80 minutes or so to run on laptop
     
     samples = sampler.get_chain()
