@@ -490,7 +490,7 @@ best_fit_jitter2 = optimize.minimize(neg_log_likelihood, x0=np.append(best_fit_j
 print('MCMC STUFF:')
 
 # LOG PRIOR
-def log_prior(params, e_max=0.8, sin_i_min=0.3):
+def log_prior(params, e_max=0.8, sin_i_min=0.076):
     ps = params[0:-3:5]  # start at 0, the last 3 elements of params are not planet params (rv_offset, sin(i), jitter)
     ks = params[1:-3:5]  # semiamps
     tcs = params[2:-3:5]  # times of conjunction
