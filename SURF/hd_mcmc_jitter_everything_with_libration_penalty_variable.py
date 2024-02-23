@@ -203,8 +203,10 @@ def get_rvs(params, times, integrator, time_base, auday_ms = AUDAY_MS):
 # OPTIMIZE OVER NEGATIVE LOG LIKELIHOOD INSTEAD OF JUST CHI SQUARED
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
+#### Change only this value for varying the libration penalty!
+Alib = 0.1  
 
-def neg_log_likelihood(params, Alib=0.3, nperiods=500, nsamples=1000, data = hd_data):
+def neg_log_likelihood(params, Alib=Alib, nperiods=500, nsamples=1000, data = hd_data):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -334,7 +336,7 @@ best_fit_jitter2 = optimize.minimize(neg_log_likelihood, x0=np.append(best_fit_j
 print('MCMC STUFF:')
 
 # LOG PRIOR
-def log_prior(params, e_max=0.8, sin_i_min=0.3):
+def log_prior(params, e_max=0.8, sin_i_min=0.076):  # change sin_i_min to 0.076 based on analysis in february 2024 notebook
     ps = params[0:-3:5]  # start at 0, the last 3 elements of params are not planet params (rv_offset, sin(i), jitter)
     ks = params[1:-3:5]  # semiamps
     tcs = params[2:-3:5]  # times of conjunction
@@ -355,7 +357,7 @@ def log_prior(params, e_max=0.8, sin_i_min=0.3):
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
 
-def log_likelihood(params, Alib=0.3, nperiods=500, nsamples=1000, data = hd_data):
+def log_likelihood(params, Alib=Alib, nperiods=500, nsamples=1000, data = hd_data):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -483,7 +485,7 @@ print(best_fit_jitter2)
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, replacing get_nbody_resids. The original version is commented out below: 
 
-def get_nbody_resids_jitter_libration(params, Alib=0.3, nperiods=500, nsamples=1000, integrator='ias15', data=hd_data, time_base=np.median(hd_data.BJD)):
+def get_nbody_resids_jitter_libration(params, Alib=Alib, nperiods=500, nsamples=1000, integrator='ias15', data=hd_data, time_base=np.median(hd_data.BJD)):
     """
     Gets the normalized residuals for the n-body fit with REBOUND, penalizing for the RMS of the libration angle a 
     and for jitter, holding each of them constant (this is the function we want to optimize)
@@ -603,7 +605,7 @@ for alib in alibs:
     pos[:, -2][pos[:,-2] > 1] = 2 - pos[:, -2][pos[:,-2] > 1]
     
     # save MCMC sample chain to a file
-    filename = f"mcmc_hd45364_everything_with_libration_penalty_{int(alib * 10) % 10}.h5"  # this has everything: rv offset, sin(i), and jitter
+    filename = f"mcmc_hd45364_everything_with_libration_penalty_variable_{int(alib * 10) % 10}.h5"  # this has everything: rv offset, sin(i), and jitter
     backend = emcee.backends.HDFBackend(filename)
     backend.reset(nwalkers, ndim)
     
