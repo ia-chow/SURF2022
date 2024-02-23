@@ -203,10 +203,8 @@ def get_rvs(params, times, integrator, time_base, auday_ms = AUDAY_MS):
 # OPTIMIZE OVER NEGATIVE LOG LIKELIHOOD INSTEAD OF JUST CHI SQUARED
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
-#### Change only this value for varying the libration penalty!
-Alib = 0.1  
 
-def neg_log_likelihood(params, Alib=Alib, nperiods=500, nsamples=1000, data = hd_data):
+def neg_log_likelihood(params, Alib=0.3, nperiods=500, nsamples=1000, data = hd_data):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -357,7 +355,7 @@ def log_prior(params, e_max=0.8, sin_i_min=0.076):  # change sin_i_min to 0.076 
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
 
-def log_likelihood(params, Alib=Alib, nperiods=500, nsamples=1000, data = hd_data):
+def log_likelihood(params, Alib=0.3, nperiods=500, nsamples=1000, data = hd_data):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -485,7 +483,7 @@ print(best_fit_jitter2)
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, replacing get_nbody_resids. The original version is commented out below: 
 
-def get_nbody_resids_jitter_libration(params, Alib=Alib, nperiods=500, nsamples=1000, integrator='ias15', data=hd_data, time_base=np.median(hd_data.BJD)):
+def get_nbody_resids_jitter_libration(params, Alib=0.3, nperiods=500, nsamples=1000, integrator='ias15', data=hd_data, time_base=np.median(hd_data.BJD)):
     """
     Gets the normalized residuals for the n-body fit with REBOUND, penalizing for the RMS of the libration angle a 
     and for jitter, holding each of them constant (this is the function we want to optimize)
