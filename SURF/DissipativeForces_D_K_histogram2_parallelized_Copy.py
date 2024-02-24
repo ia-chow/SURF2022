@@ -294,7 +294,7 @@ def D_to_K(flow_mat, root, dyvars=dyvars):
     return sp.solve(ddot_eq, K)[0]  # since sp.solve returns a singleton list
 
 # TRY DOWNSAMPLING FIRST
-# flat_samples = flat_samples[::1000]
+flat_samples = flat_samples[::1000]
 
 from tqdm import tqdm
 
@@ -330,28 +330,25 @@ def get_sample_K_value(parameter):
     # compute rho, L2 for this sample for substituting into fullflow
     samp_rho_L2_pars = dict(zip([rho, L2res], [samp_rho_val, samp_L2_val]))
     # finally, convert from D to K using the D_to_K function:
-    D_values[i] = samp_D_val  # record sample D value as well as K value from D
+    D_value = samp_D_val  # record sample D value as well as K value from D
     # make sure to substitute in rho and L2 for this specific(!) sample into the D to K values
-    K_values[i] = D_to_K(fullflow.subs(samp_rho_L2_pars),
+    K_value = D_to_K(fullflow.subs(samp_rho_L2_pars),
                          samp_root)  # use the fullflow function from earlier since that doesn't change (two planets and only considering 1st order terms)
     return K_values[i]
 
-# arrays of D and K values
-D_values = np.zeros(len(flat_samples))
-K_values = np.zeros(len(flat_samples))
 
 # create parameter list to parallelize over
 par_list = [(i, sample) for i, sample in enumerate(flat_samples)]
 
-# parallelize it
-from tqdm.contrib.concurrent import process_map  # or thread_map
-r = process_map(get_sample_K_value, par_list)
-
 # # parallelize it
-# with Pool() as pool_K_hist:
-#     print('mapping...')
-#     _ = list(tqdm(pool_K_hist.imap(get_sample_K_value, par_list), total=len(flat_samples)))
-#     print('done')
+# from tqdm.contrib.concurrent import process_map  # or thread_map
+# r = process_map(get_sample_K_value, par_list)
+
+# parallelize it
+with Pool() as pool_K_hist:
+    print('mapping...')
+    K_values = np.array(list(tqdm(pool_K_hist.imap(get_sample_K_value, par_list), total=len(flat_samples))))
+    print('done')
 
 # save K value array as numpy array so can use for later
 np.save('K_value_array', K_values)  # save the K values
@@ -363,4 +360,4 @@ plt.xlabel(r'$K$'), plt.ylabel('count')
 plt.savefig('K_value_histogram2_parallelized.png')
 
 # print a sample of K values to see if it's working...
-print(K_values[100:150])
+print(K_values)
