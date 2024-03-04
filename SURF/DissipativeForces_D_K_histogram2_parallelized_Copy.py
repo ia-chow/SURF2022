@@ -19,7 +19,7 @@ hd_data = pd.read_csv('hd45364_rvs.csv', sep = ';')
 hd_data.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
 hd_data.BJD -= 2.4e6
-cluster_data = h5py.File('2021_fall-2022_winter/mcmc_hd45364_cluster_everything.h5', 'r')  # import the posterior distribution data
+cluster_data = h5py.File('mcmc_hd45364_cluster_everything.h5', 'r')  # import the posterior distribution data
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
 n_burn_in = 200  # discard the first 200 samples as burn-in time
 # reshape the chain to flatten it out
@@ -294,7 +294,7 @@ def D_to_K(flow_mat, root, dyvars=dyvars):
     return sp.solve(ddot_eq, K)[0]  # since sp.solve returns a singleton list
 
 # TRY DOWNSAMPLING FIRST
-flat_samples = flat_samples[::1000]
+# flat_samples = flat_samples[::1000]
 
 from tqdm import tqdm
 
@@ -334,7 +334,7 @@ def get_sample_K_value(parameter):
     # make sure to substitute in rho and L2 for this specific(!) sample into the D to K values
     K_value = D_to_K(fullflow.subs(samp_rho_L2_pars),
                          samp_root)  # use the fullflow function from earlier since that doesn't change (two planets and only considering 1st order terms)
-    return K_values[i]
+    return K_value
 
 
 # create parameter list to parallelize over
@@ -347,17 +347,17 @@ par_list = [(i, sample) for i, sample in enumerate(flat_samples)]
 # parallelize it
 with Pool() as pool_K_hist:
     print('mapping...')
-    K_values = np.array(list(tqdm(pool_K_hist.imap(get_sample_K_value, par_list), total=len(flat_samples))))
+    K_values = np.array(list(tqdm(pool_K_hist.imap(get_sample_K_value, par_list), total=len(flat_samples)))).astype(np.float64)
     print('done')
 
 # save K value array as numpy array so can use for later
 np.save('K_value_array', K_values)  # save the K values
 
-# plot K values
-plt.figure(figsize = (12, 8))
-plt.hist(K_values)
-plt.xlabel(r'$K$'), plt.ylabel('count')
-plt.savefig('K_value_histogram2_parallelized.png')
+# # print a sample of K values to see if it's working...
+# print(K_values)
 
-# print a sample of K values to see if it's working...
-print(K_values)
+# # plot K values
+# plt.figure(figsize = (12, 8))
+# plt.hist(K_values)
+# plt.xlabel(r'$K$'), plt.ylabel('count')
+# plt.savefig('K_value_histogram2_parallelized.png')

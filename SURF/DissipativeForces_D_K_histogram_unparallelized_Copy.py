@@ -19,7 +19,7 @@ hd_data = pd.read_csv('hd45364_rvs.csv', sep = ';')
 hd_data.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
 hd_data.BJD -= 2.4e6
-cluster_data = h5py.File('2021_fall-2022_winter/mcmc_hd45364_cluster_everything.h5', 'r')  # import the posterior distribution data
+cluster_data = h5py.File('mcmc_hd45364_cluster_everything.h5', 'r')  # import the posterior distribution data
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
 n_burn_in = 200  # discard the first 200 samples as burn-in time
 # reshape the chain to flatten it out
@@ -294,7 +294,7 @@ def D_to_K(flow_mat, root, dyvars=dyvars):
     return sp.solve(ddot_eq, K)[0]  # since sp.solve returns a singleton list
 
 # TRY DOWNSAMPLING FIRST
-# flat_samples = flat_samples[::1000]
+flat_samples = flat_samples[::1000]
 
 # compute the d/k values using the for loop
 # arrays of D and K values
@@ -341,4 +341,4 @@ plt.xlabel(r'$K$'), plt.ylabel('count')
 plt.savefig('K_value_histogram_unparallelized.png')
 
 # print a sample of K values to see if it's working...
-print(K_values[100:150])
+print(K_values[:150])
