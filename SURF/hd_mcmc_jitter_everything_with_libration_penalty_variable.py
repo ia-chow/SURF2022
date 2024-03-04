@@ -571,7 +571,7 @@ def get_nbody_resids_jitter_libration(params, Alib=0.3, nperiods=500, nsamples=1
 #     return (obs_y - synth_y) / obs_yerr  # return normalized residuals
 
 # loop over Alib penalties ranging from 0.1 to 1
-alibs = np.linspace(0.1, 1.0, 10, endpoint=True)
+alibs = np.linspace(0.5, 1.0, 6, endpoint=True)
 
 for alib in alibs:
     # get the "fit params" to get the jacobian from this:
