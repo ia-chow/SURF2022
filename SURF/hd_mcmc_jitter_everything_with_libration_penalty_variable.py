@@ -605,14 +605,15 @@ for alib in alibs:
     # save MCMC sample chain to a file
     filename = f"mcmc_hd45364_everything_with_libration_penalty_variable_{int(alib * 10) % 10}.h5"  # this has everything: rv offset, sin(i), and jitter
     backend = emcee.backends.HDFBackend(filename)
-    backend.reset(nwalkers, ndim)
-    
+    # backend.reset(nwalkers, ndim)
+    print("Initial size: {0}".format(backend.iteration))
     steps = 50000  # try 50000 steps with multiprocessing on the cluster
 
     # RUNNING MCMC (parallelization):
     
     with Pool() as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=[alib], pool = pool, backend = backend)
-        sampler.run_mcmc(pos, steps, progress=True)  # this takes 80 minutes or so to run on laptop
-    
+        sampler.run_mcmc(None, steps, progress=True) 
+        
     samples = sampler.get_chain()
+    print("Final size: {0}".format(new_backend.iteration))
