@@ -607,13 +607,13 @@ for alib in alibs:
     backend = emcee.backends.HDFBackend(filename)
     # backend.reset(nwalkers, ndim)
     print("Initial size: {0}".format(backend.iteration))
-    steps = 50000  # try 50000 steps with multiprocessing on the cluster
+    steps = 50000-backend.iteration  # try 50000 steps with multiprocessing on the cluster
 
     # RUNNING MCMC (parallelization):
     
     with Pool() as pool:
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, args=[alib], pool = pool, backend = backend)
-        sampler.run_mcmc(None, steps, progress=True) 
+        sampler.run_mcmc(None, steps, progress=True)
         
     samples = sampler.get_chain()
-    print("Final size: {0}".format(new_backend.iteration))
+    print("Final size: {0}".format(backend.iteration))
