@@ -203,8 +203,8 @@ def get_rvs(params, times, integrator, time_base, auday_ms = AUDAY_MS):
 # OPTIMIZE OVER NEGATIVE LOG LIKELIHOOD INSTEAD OF JUST CHI SQUARED
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
-# change this to 1.0
-alib = 1.0
+# change this to 0.9
+alib = 0.9
 
 def neg_log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd_data):
     """
