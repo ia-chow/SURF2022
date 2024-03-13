@@ -352,7 +352,7 @@ with Pool() as pool_K_hist:
     print('done')
 
 # save K value array as numpy array so can use for later
-np.save('K_value_array_01', K_values)  # save the K values
+np.save('K_value_array_variable_01', K_values)  # save the K values
 
 # # print a sample of K values to see if it's working...
 # print(K_values)
