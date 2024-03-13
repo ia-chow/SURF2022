@@ -20,7 +20,7 @@ hd_data.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
 hd_data.BJD -= 2.4e6
 # import the posterior distribution data for the STRONG PENALTY (A = 0.1)
-cluster_data = h5py.File('mcmc_hd45364_everything_with_libration_penalty1.h5', 'r')  # import the posterior distribution data
+cluster_data = h5py.File('mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import the posterior distribution data
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
 n_burn_in = 200  # discard the first 200 samples as burn-in time
 # reshape the chain to flatten it out
