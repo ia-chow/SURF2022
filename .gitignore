@@ -9,3 +9,5 @@
 **/*.h5
 # ignore the PyCharm .idea folder
 .idea/
+# ignore pycache folder
+**/__pycache__
