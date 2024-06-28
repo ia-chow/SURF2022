@@ -56,11 +56,11 @@ nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-0
 #                9.72945632e-02,  1.32194117e-01, -5.29072002e-01, 0., 0., 1, 2.428]#-7.68527759e-03] 
 
 # Neg log likelihood jitter fit:
-fit_params = [2.27921588e+02, 7.26400833e+00, 5.39369323e+04, 8.21562550e-02, -1.97505981e-01, 
-              3.43940287e+02, 1.81646527e+01, 5.47050694e+04, 1.27000583e-01, 6.42195109e-02,
-              -2.60932702e-01, 1.58652743e+01, 8.72905157e-01,
-              1.00000000e+00, 
-              2.17080290e+00, 3.79998943e+00, 5.15126783e+00]
+fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
+              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
+              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
+              1.00000000e+00,
+              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -203,9 +203,13 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
     
     sim_backwards = sim.copy()
     sim_backwards.dt *= -1  # set timestep to be negative if integrating backwards
+
+    times = pd.Series(times)  # convert to series if not already
     
-    forward_times = np.array(list(filter(lambda x: x - time_base >= 0, times)))
-    backward_times = np.array(list(filter(lambda x: x - time_base < 0, times)))
+    forward_times = times[times - obs_time_base >= 0]
+    backward_times = times[times - obs_time_base < 0]
+    forward_indices = forward_times.index
+    backward_indices = backward_times.index
     
     # initialize rvs
     rv_forward = np.zeros(len(forward_times))
@@ -214,11 +218,13 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
     num_planets = 2  # find number of planets in params passed
     
     # get the rvs (z velocity, assuming 90 deg inclination) from the rebound simulation to compare with the actual simulation
-    for i, t in enumerate(forward_times):
+    for j, it in enumerate(zip(forward_indices, forward_times)):
+        i, t = it  # forward index, forward time
         sim.integrate(t, exact_finish_time = 1)
         # integrate to the specified time, exact_finish_time = 1 for ias15, 
         # sim.status()
         star = sim.particles[0]
+        # print(instrument[i])
         # use one of 3 different radial velocity offsets depending on whether the data is from HARPS1, HARPS2 or HIRES
         if instrument[i] == 'HARPS1':
             rv_offset = params[5 * num_planets]
@@ -228,12 +234,14 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
             rv_offset = params[5 * num_planets + 2]
         else:
             rv_offset = 0.
-        rv_forward[i] = (-star.vz * auday_ms) + rv_offset  # use x-velocity of the star as the radial velocity, convert to m/s
+        rv_forward[j] = (-star.vz * auday_ms) + rv_offset  # use x-velocity of the star as the radial velocity, convert to m/s
     
-    for i, t in enumerate(backward_times):
+    for j, it in enumerate(zip(backward_indices, backward_times)):
+        i, t = it  # backward index, backward time
         sim_backwards.integrate(t, exact_finish_time = 1)
         star = sim_backwards.particles[0]
         # use one of 3 different radial velocity offsets depending on whether the data is from HARPS1, HARPS2 or HIRES
+        # print(instrument[i])
         if instrument[i] == 'HARPS1':
             rv_offset = params[5 * num_planets]
         elif instrument[i] == 'HARPS2':
@@ -242,7 +250,7 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
             rv_offset = params[5 * num_planets + 2]
         else:
             rv_offset = 0.
-        rv_backward[i] = (-star.vz * auday_ms) + rv_offset
+        rv_backward[j] = (-star.vz * auday_ms) + rv_offset
     
     return np.concatenate((rv_backward, rv_forward))
 
@@ -299,18 +307,20 @@ print('MCMC STUFF:')
 
 # LOG PRIOR
 def log_prior(params, e_max=0.8, sin_i_min=0.076):
-    ps = params[0:-8:5]  # start at 0, the last 8 elements of params are not planet params (rv_offset1, rvoffset2, rvoffset3, sin(i), jitter1, jitter2, jitter3)
-    ks = params[1:-8:5]  # semiamps
-    tcs = params[2:-8:5]  # times of conjunction
+    ps = params[0:-7:5]  # start at 0, the last 7 elements of params are not planet params (rv_offset1, rvoffset2, rvoffset3, sin(i), jitter1, jitter2, jitter3)
+    ks = params[1:-7:5]  # semiamps
+    tcs = params[2:-7:5]  # times of conjunction
     # compute e and omega from secos, sesin
-    es = params[3:-8:5] ** 2 + params[4:-8:5] ** 2  # eccentricity from secos, sesin
+    es = params[3:-7:5] ** 2 + params[4:-7:5] ** 2  # eccentricity from secos, sesin
     # omega = np.arctan2(params[3:-3:5], params[4:-3:5])  # omega from arctan of sesin, secos
     sin_i = params[-4]  # sin(i) is the fourth-to-last item of the array
+    # jitters
+    jitters = params[-3:]  # jitters
 
     # uniform log prior, return 0 if param falls within uniform distribution, -infinity otherwise
     # print(ps, ks, tcs, es, omega)
 
-    if all(p > 0 for p in ps) and all(k > 0 for k in ks) and all(tc > 0 for tc in tcs) and all(0 < e < e_max for e in es) and (sin_i_min < sin_i <= 1):
+    if all(p > 0. for p in ps) and all(k > 0. for k in ks) and all(tc > 0. for tc in tcs) and all(0. < e < e_max for e in es) and (sin_i_min < sin_i <= 1.) and all(0. <= jitter <= 10. for jitter in jitters):
         return 0.0  # log prior, so ln(1) = 0
     else:
         return -np.inf  # log prior, so ln(0) = -infinity
@@ -347,7 +357,6 @@ def log_probability(params):
         return -np.inf
     return lp + log_likelihood(params)
 
-
 # DO LEAST-SQUARES OPTIMIZATION HERE TO GET A JACOBIAN FOR THE NEXT PART
 # The actual least-squares "fit" will probably be slightly worse compared to the fit using negative log-likelihodo (because it doesn't take into account jitter), but hopefully the jacobian is close enough to just use with the original best fit (the one computed using negloglikelihood instead of least-squares) to get a decent starting position for the walkers
 
@@ -377,13 +386,13 @@ jacobian_fit_params = optimize.least_squares(lambda params: get_nbody_resids(par
 j = jacobian_fit_params.jac  # jacobian, value for jitter is 0 though so hopefully we can manually patch the jacobian to get something reasonable
 
 # MANUALLY PATCHING JITTER FOR THE JACOBIAN:
-j[-1][-1] = 0.1  # empiriclaly determined value of onesigma_jit in the hd45364_jitter_sini notebook, about one sigma value of jitter, roughly divided by 3
-j[-2][-2] = 0.1  
-j[-3][-3] = 0.1
+j[-1][-1] = 0.01  # empiriclaly determined value of onesigma_jit in the hd45364_jitter_sini notebook, about one sigma value of jitter, roughly divided by 3
+j[-2][-2] = 0.01  
+j[-3][-3] = 0.01
 # manually patching RV offset for the jacobian as well:
-j[10][10] = -0.3
-j[11][11] = -0.3
-j[12][12] = -0.3
+j[10][10] = 0.01
+j[11][11] = 0.01
+j[12][12] = 0.01
 # assume covariance with everything else is 0 which is bad but hopefully gives something to work with at least? (the chains will converge (?))
 # computing covariance:
 cov = np.linalg.inv(j.T @ j)  # covariance matrix from jacobian sigma = (X^T * X)^(-1)
@@ -392,8 +401,8 @@ best = best_fit_jitter.x  # best-fit solution is our center
 # initialize walkers
 nwalkers = 50  # number of walkers to use in MCMC
 ndim = len(best)  # number of dimensions in parameter space
-# gaussian ball of 50 walkers with variance equal to cov * 1/100 and centered on the best-fit solution
-pos = np.random.multivariate_normal(best, cov * 1/100, size = nwalkers)
+# gaussian ball of 50 walkers with variance equal to cov * 1e-5 and centered on the best-fit solution
+pos = np.random.multivariate_normal(best, cov * 1.e-5, size = nwalkers)
 
 # save MCMC sample chain to a file
 filename = "mcmc_hd45364_cluster_everything.h5"  # this has everything: rv offset, sin(i), and jitter
