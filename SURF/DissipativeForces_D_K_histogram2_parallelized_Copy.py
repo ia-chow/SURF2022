@@ -1,3 +1,5 @@
+## NOTE: THIS SCRIPT REQUIRES REBOUND VERSION 3.28.0 AND REBOUNDX VERSION 3.11.0 TO RUN PROPERLY!
+
 # IMPORTS
 
 import rebound as rb
@@ -9,16 +11,32 @@ import radvel
 import pandas as pd
 import h5py
 from multiprocessing import Pool
-from rebound.interruptible_pool import InterruptiblePool
+from emcee.interruptible_pool import InterruptiblePool
 
 plt.rc('font', size=18)  # fontsize larger
 
-# get the data and convert it to flat samples first:
-hd_data = pd.read_csv('hd45364_rvs.csv', sep = ';')
+MAY_1_2015 = 57143.5  # barycentric julian date for May 1, 2015 (the date of the HARPS instrument upgrade as per trifonov et al 2020)
+# 57143.5 is BJD for May 1, 2015
+# 57173.5 is BJD for May 31, 2015
+
+# harps
+hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
 # giant outlier at position 116 in the data (found manually earlier) which we remove
-hd_data.drop(116, inplace=True)  # drop the row and keep the df in place
+hd_data_harps.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
-hd_data.BJD -= 2.4e6
+hd_data_harps.BJD -= 2.4e6
+# rename target to HARPS1 or HARPS2
+hd_data_harps['target'] = hd_data_harps.apply(lambda row: 'HARPS1' if row.BJD < MAY_1_2015 else 'HARPS2', axis = 1)
+# hires
+hd_data_hires = pd.read_csv('hires_rvs.txt', sep = '\t', index_col=False, header='infer', dtype=np.float64)
+hd_data_hires['BJD - 2,450,000'] += 50000.  # adding 50000 to have the same units as harps
+hd_data_hires['target'] = 'HIRES'
+hd_data_hires.columns = ['BJD', 'RV_mlc_nzp', 'e_RV_mlc_nzp', 'target']
+# concatenate two data sets one on top of the other
+hd_data = pd.concat((hd_data_harps, hd_data_hires), axis=0)  # matching BJD, RV_mlc_nzp and e_RV_mlc_nzp columns
+# reset index
+hd_data.reset_index(drop=True, inplace=True)
+
 # import the posterior distribution data for the STRONG PENALTY (A = 0.1)
 cluster_data = h5py.File('mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import the posterior distribution data
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
@@ -29,23 +47,25 @@ flat_samples = samples[n_burn_in:].reshape(-1, samples[n_burn_in:].shape[-1])
 # functions for the d/k value computations and other setup
 
 #Least squares fit: 
-fit_params = [ 2.28512793e+02, 7.27736501e+00, 5.39371914e+04, -4.66868256e-02, 
-               -1.78080009e-01, 3.43378038e+02, 1.78603341e+01, 5.40186750e+04, 
-               9.72945632e-02,  1.32194117e-01, -5.29072002e-01, 1, 2.428]#-7.68527759e-03] 
+fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
+              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
+              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
+              1.00000000e+00,
+              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
 
-# star mass, g and auday to m/s conversion factor
 STAR_MASS = 920  # 920 jupiter masses
 G = 2.825e-7  # converting G to jupiter masses, au, and days
 AUDAY_MS = 1.731e6  # conversion factor for au/day to m/s
 
-# use median of time data as the time base:
-obs_time_base = np.median(hd_data.BJD)
+# use median of harps data as base time
+obs_time_base = np.median(hd_data_harps.BJD)
 
 def mass_to_semiamp(planet_mass, star_mass, period, eccentricity, inclination):
     """
     planet mass (jupiter masses) to semi amplitude (in au/day)
     """
     return ((2 * np.pi * G/period) ** (1/3) * (planet_mass * np.sin(inclination) / star_mass ** (2/3)) * (1/np.sqrt(1 - eccentricity ** 2)))
+
 
 def semiamp_to_mass(semiamp, star_mass, period, eccentricity, inclination):
     """
@@ -68,27 +88,31 @@ def get_sim_from_params(params, integrator, time_base, star_mass = STAR_MASS, au
     params[i + 3] is sqrt(e) * cos(omega)
     params[i + 4] is sqrt(e) * sin(omega)
     
-    params[5 * num_planets] is rv offset
-    params[5 * num_planets + 1] is sin(i)
-    params[5 * num_planets + 2] is jitter (not used in this specific function but used in some other functions that call this one)
+    params[5 * num_planets] is rv offset for HARPS1
+    params[5 * num_planets + 1] is rv offset for HARPS2
+    params[5 * num_planets + 2] is rv offset for HIRES
+    params[5 * num_planets + 3] is sin(i)
+    params[5 * num_planets + 4] is jitter for HARPS1
+    params[5 * num_planets + 5] is jitter for HARPS2
+    params[5 * num_planets + 6] is jitter for HIRES
     
     param integrator: integrator to use, one of 'whfast' or 'ias15'
     param time_base: base time (to begin integration from) in the simulation
     """
     
-    num_planets = int((len(params) - 1) / 5) # -2 because there are rv_offset and jit parameters:
+    num_planets = 2 # 2 planets
     
     sim = rb.Simulation()
     sim.integrator = integrator
     sim.t = time_base  # keplerian and n-body models initialized at the same time offset
     # print(sim.t)
     if integrator == 'whfast':  # if using whfast integrator, set timestep
-        sim.dt = 1/50 * min(params[0::5][:-1])  # timestep is 1/20th of the shortest orbital period of any planet
+        sim.dt = 1/50 * np.min([params[0], params[5]])  # timestep is 1/20th of the shortest orbital period of any planet
         # print(sim.dt)
     sim.units = ('AU', 'Mjupiter', 'day')
     sim.add(m = star_mass)  # star mass as a constant
     
-    inclination = np.arcsin(params[-2])  # sin(i) is second from the back of the array
+    inclination = np.arcsin(params[-4])  # sin(i) is fourth from the back of the array
         
     for i in range (0, num_planets):
         # print(i)
@@ -113,14 +137,14 @@ def get_sim_from_params(params, integrator, time_base, star_mass = STAR_MASS, au
 def get_simple_sim(masses, integrator = 'ias15', period_ratio = 3/2, epsilon=0.01):
     """
     gets simple sim (for eccentricity track stuff)
-    param masses: array of planet masses [in units of Mstar]
+    param masses: array of planet masses
     param integrator: integrator
     param epsilon: amount by which the resonant period ratio should be offset from the equilibrium in the simulation
     """
     sim = rb.Simulation()
     sim.integrator = integrator
     # central star
-    sim.add(m = 1)  # central star has mass of 1, so the planet masses are in units of Mstar
+    sim.add(m = 1)
     
     sim.add(m = masses[0], P = 1)
     sim.add(m = masses[1], P = period_ratio * (1 + epsilon))
