@@ -11,3 +11,5 @@
 .idea/
 # ignore pycache folder
 **/__pycache__
+# ignore the rv_samples .npy since it is very large
+**/rv_samples.npy
