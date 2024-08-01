@@ -311,7 +311,7 @@ log_prob = log_prob[burnin:]
 # reshaped_samples = samples.reshape(-1, len(samples.T))
 # n_res_samples = len(reshaped_samples)//100
 # Compute and plot resonant angles for all the samples, following Fig. 2 of H&P
-n_res_samples = len(samples)//3
+n_res_samples = len(samples)//1.01
 res_sample_indices = np.random.randint(0, len(samples), size=n_res_samples)
 
 sim1 = get_sim_from_params(fit_params, 'ias15', obs_time_base)  # start sim
