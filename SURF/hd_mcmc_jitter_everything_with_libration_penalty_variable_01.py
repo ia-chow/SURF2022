@@ -291,10 +291,13 @@ alib = 0.1
 # alib = 1.0
 # alib = 0.5
 # alib = 0.8
+
 # alib = 0.2
 # alib = 0.3
 # alib = 0.4
-alib = 0.6
+# alib = 0.6
+# alib = 0.7
+# alib = 0.9
 
 def neg_log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500, nsamples=1000, data = hd_data, num_planets=2):
     """
