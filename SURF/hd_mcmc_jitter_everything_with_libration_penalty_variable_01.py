@@ -13,6 +13,7 @@ import reboundx
 import emcee
 from emcee.interruptible_pool import InterruptiblePool
 from multiprocessing import Pool
+import multiprocessing
 
 # THIS SCRIPT IS LIKE HD_MCMC_JITTER_EVERYTHING BUT WITH SOME EXTRANEOUS COMMENTS REMOVED AND ADDING A RMS LIBRATION PENALTY WITH A = 0.3
 # This penalty is implemented in the same manner as get_nbody_resids_jitter_libration() in hd45364_jitter_sini
@@ -290,6 +291,10 @@ alib = 0.1
 # alib = 1.0
 # alib = 0.5
 # alib = 0.8
+# alib = 0.2
+# alib = 0.3
+# alib = 0.4
+alib = 0.6
 
 def neg_log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500, nsamples=1000, data = hd_data, num_planets=2):
     """
@@ -670,7 +675,7 @@ backend.reset(nwalkers, ndim)
 steps = 50000# -backend.iteration  # try 50000 steps with multiprocessing on the cluster
 
 # RUNNING MCMC (parallelization):
-with InterruptiblePool() as pool:
+with InterruptiblePool(processes=multiprocessing.cpu_count()) as pool:
     sampler = emcee.EnsembleSampler(nwalkers, ndim, log_probability, pool = pool, backend = backend)  # doesn't call any additional arguments
     sampler.run_mcmc(pos, steps, progress=True)
 
