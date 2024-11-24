@@ -51,9 +51,11 @@ hd_data.reset_index(drop=True, inplace=True)
 # NEW STUFF FOR THE JITTER VERSION OF THIS SCRIPT:
 
 #Very original parameters used in Hadden and Payne
-nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-01, 
-               1.17923823e-01,  3.43881599e+02,  1.87692753e+01,  5.40138425e+04, 
-               1.68408461e-01,  5.05903191e-02, -3.28526403e-03, 0., 0., 1, 1.84]  # inserted 0 for harps2 and hires
+nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-01, 1.17923823e-01,  
+               3.43881599e+02,  1.87692753e+01,  5.40138425e+04, 1.68408461e-01,  5.05903191e-02, 
+               -3.28526403e-03, 0., 0., 
+               1, 
+               1.84, 0., 0.]  # inserted 0 for harps2 and hires for both rv offset and jitter
 
 # #Least squares fit: 
 # fit_params = [ 2.28512793e+02, 7.27736501e+00, 5.39371914e+04, -4.66868256e-02, 
@@ -61,11 +63,32 @@ nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-0
 #                9.72945632e-02,  1.32194117e-01, -5.29072002e-01, 0., 0., 1, 2.428]#-7.68527759e-03] 
 
 # Neg log likelihood jitter fit:
-fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
-              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
-              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
+prev_params = [ 2.27510047e+02,  7.21459722e+00, 5.39394197e+04, -1.45510376e-02, -1.91998583e-01,
+              3.44196007e+02,  1.80943200e+01,  5.47060928e+04, 9.38174624e-02,  1.11054397e-01,
+              -1.80048668e-01, -1.44155418e+00, 1.40493043e+00,
               1.00000000e+00,
-              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
+              1.46046278e+00,  6.96508946e-01, 3.45217643e+00]
+
+# LI ET AL. 2022 PARAMS
+li_params = [225.34, 7.26, radvel.orbit.timeperi_to_timetrans(53375, 225.34, 0.07, np.deg2rad(92)), np.sqrt(0.07) * np.cos(np.deg2rad(92)), np.sqrt(0.07) * np.sin(np.deg2rad(92)),
+             345.76, 18.17, radvel.orbit.timeperi_to_timetrans(53336, 345.76, 0.01, np.deg2rad(276)), np.sqrt(0.01) * np.cos(np.deg2rad(276)), np.sqrt(0.01) * np.cos(np.deg2rad(276)),
+            -1.80048668e-01, -1.44155418e+00, 1.40493043e+00,
+              1.00000000e+00,
+              1.46046278e+00,  6.96508946e-01, 3.45217643e+00]
+
+# TRIFONOV PARAMS
+trifonov_params = [226.57, 7.29, radvel.orbit.timeperi_to_timetrans(52902, 226.57, 0.0796, np.deg2rad(244.44)), np.sqrt(0.0796) * np.cos(np.deg2rad(244.44)), np.sqrt(0.0796) * np.sin(np.deg2rad(244.44)),
+              344.66, 18.21, radvel.orbit.timeperi_to_timetrans(52920, 344.66, 0.002, np.deg2rad(20.342)), np.sqrt(0.0002) * np.cos(np.deg2rad(20.342)), np.sqrt(0.0002) * np.sin(np.deg2rad(20.342)),
+              0.041, -3.348, 2.708,
+              np.sin(np.deg2rad(83.7597)),
+              1.437, 0.763, 3.136]
+
+# UPDATED TRIFONOV PARAMS
+fit_params = [2.27864638e+02, 7.19443190e+00, 5.27993627e+04, -7.26813509e-03, -2.15682280e-01, 
+              3.44040155e+02, 1.82002701e+01, 5.29855398e+04, 1.11463111e-01, 3.12038118e-02, 
+              -1.41032815e-01, -2.93573404e+00, 1.65809757e+00, 
+              1., 
+              1.40629135e+00, 8.26926669e-01, 3.03850222e+00]
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -211,8 +234,8 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     
@@ -264,8 +287,11 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name. The original version is commented out below:
 # change this to 0.1
 alib = 0.1
+# alib = 1.0
+# alib = 0.5
+# alib = 0.8
 
-def neg_log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd_data):
+def neg_log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500, nsamples=1000, data = hd_data, num_planets=2):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -293,29 +319,24 @@ def neg_log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd
     param nsamples: number of samples (timesteps) from 0 to nperiod inner planet periods to integrate over, default is 1000
     
     """
+
     obs_y = data.RV_mlc_nzp  # observed RVs
+    
     # inclination not handled sparately
-    # inclination = np.arcsin(params[-2])  # inclination is np.arcsin of the second to last parameter
+    # inclination = np.arcsin(params[-4])  # inclination is np.arcsin of the second to last parameter
     
-    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = obs_time_base)  # RVs from the rebound simulation
+    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
-    
-    # so log likelihood is normally computed as:
-    # L = -1/2 * np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
-    # we modify the formula to add A_lib penalties in the form of additional "residuals" A_lib_normalized_resids_1 and 2. After concatenating all three sets of residuals ever, we now compute it as:
-    # l_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
-    
-    # log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
-    #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
 
-    # compute the jitters first
     conditions = [data.target == 'HARPS1', data.target == 'HARPS2', data.target == 'HIRES']  # conditions are harps1, harps2 or hires
-    jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
 
-    # get the jitter values for the corresponding data points
+    rv_offsets = params[5 * num_planets:5 * num_planets + 3]  # rv_offsets for HARPS1, HARPS2 and HIRES, in that order
+    jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
+    
+    # get the jitter and rv values for the corresponding data points
+    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
     jitter = np.select(conditions, jitters, default=np.nan)
 
-    # then first compute the normalized residuals taking into account jitter, as follows:
     jitter_normalized_resids = (obs_y - synth_y)/np.sqrt(obs_yerr ** 2 + jitter ** 2)  # compute normalized residuals using rebound
     
     # now compute the A_lib "residuals" to penalize the fit with:
@@ -352,8 +373,8 @@ def neg_log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd
     A_lib_normalized_resids_2 = np.array([(angle - np.pi)/(Alib * np.sqrt(len(angle2))) for angle in angle2])  # since outer planet oscillates around pi
 
     # after computing jitter_normalized_resids and A_lib_resids_1 and 2, we finally have the modified log-likelihood as:
-    
-    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
+    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) - np.log(np.sqrt(2 * np.pi * sigma_z2)) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
 
     # and return the modified log_likelihood:
     return -log_likelihood_pen  # negative since we are trying to minimize the negative log likelihood
@@ -403,7 +424,7 @@ def log_prior(params, e_max=0.8, sin_i_min=0.076):
 
 #### BELOW FUNCTION IS CHANGED FROM hd_mcmc_jitter_everything.py, with the same name.
 
-def log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd_data):
+def log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500, nsamples=1000, data = hd_data, num_planets = 2):
     """
     Gets the negative log-likelihood (including a jitter term!) for the n-body fit with REBOUND to use with scipy.optimize.minimze,
     penalizing for the RMS of the libration angle a and for jitter, with each of them constant:
@@ -431,26 +452,23 @@ def log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd_dat
     param nsamples: number of samples (timesteps) from 0 to nperiod inner planet periods to integrate over, default is 1000
     
     """
-    # get observed ys, synthetic ys, and errors
     obs_y = data.RV_mlc_nzp  # observed RVs
-    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = obs_time_base)  # RVs from the rebound simulation
-    obs_yerr = data.e_RV_mlc_nzp  # y error
     
-    # so log likelihood is normally computed as:
-    # L = -1/2 * np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
-    # we modify the formula to add A_lib penalties in the form of additional "residuals" A_lib_normalized_resids_1 and 2. After concatenating all three sets of residuals ever, we now compute it as:
-    # l_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
+    # inclination not handled sparately
+    # inclination = np.arcsin(params[-4])  # inclination is np.arcsin of the second to last parameter
     
-    # log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
-    #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
+    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = time_base)  # RVs from the rebound simulation
+    obs_yerr = data.e_RV_mlc_nzp  # y errors
 
-    # get numpy array of jitters corresponding to each instrument
     conditions = [data.target == 'HARPS1', data.target == 'HARPS2', data.target == 'HIRES']  # conditions are harps1, harps2 or hires
-    jitters = params[-3:]  # jitters
-    # get the jitter values for the corresponding data points
+
+    rv_offsets = params[5 * num_planets:5 * num_planets + 3]  # rv_offsets for HARPS1, HARPS2 and HIRES, in that order
+    jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
+    
+    # get the jitter and rv values for the corresponding data points
+    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
     jitter = np.select(conditions, jitters, default=np.nan)
 
-    # then first compute the normalized residuals taking into account jitter, as follows:
     jitter_normalized_resids = (obs_y - synth_y)/np.sqrt(obs_yerr ** 2 + jitter ** 2)  # compute normalized residuals using rebound
     
     # now compute the A_lib "residuals" to penalize the fit with:
@@ -487,11 +505,11 @@ def log_likelihood(params, Alib=alib, nperiods=500, nsamples=1000, data = hd_dat
     A_lib_normalized_resids_2 = np.array([(angle - np.pi)/(Alib * np.sqrt(len(angle2))) for angle in angle2])  # since outer planet oscillates around pi
 
     # after computing jitter_normalized_resids and A_lib_resids_1 and 2, we finally have the modified log-likelihood as:
-    
-    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
+    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) - np.log(np.sqrt(2 * np.pi * sigma_z2)) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
 
     # and return the modified log_likelihood:
-    return log_likelihood_pen  # positive in this case unlike neg_log_likelihood above
+    return log_likelihood_pen  # positive
 
 
 # LOG PROBABILITY
@@ -540,6 +558,7 @@ def get_nbody_resids_jitter_libration(params, Alib=alib, nperiods=500, nsamples=
     param nsamples: number of samples (timesteps) from 0 to nperiod inner planet periods to integrate over, default is 1000
     
     """
+
     # get observed ys, synthetic ys, and errors
     obs_y = data.RV_mlc_nzp  # observed RVs
     synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = obs_time_base)  # RVs from the rebound simulation

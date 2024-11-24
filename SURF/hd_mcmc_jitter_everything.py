@@ -46,9 +46,11 @@ hd_data.reset_index(drop=True, inplace=True)
 # NEW STUFF FOR THE JITTER VERSION OF THIS SCRIPT:
 
 #Very original parameters used in Hadden and Payne
-nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-01, 
-               1.17923823e-01,  3.43881599e+02,  1.87692753e+01,  5.40138425e+04, 
-               1.68408461e-01,  5.05903191e-02, -3.28526403e-03, 0., 0., 1, 1.84]  # inserted 0 for harps2 and hires
+nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-01, 1.17923823e-01,  
+               3.43881599e+02,  1.87692753e+01,  5.40138425e+04, 1.68408461e-01,  5.05903191e-02, 
+               -3.28526403e-03, 0., 0., 
+               1, 
+               1.84, 0., 0.]  # inserted 0 for harps2 and hires for both rv offset and jitter
 
 # #Least squares fit: 
 # fit_params = [ 2.28512793e+02, 7.27736501e+00, 5.39371914e+04, -4.66868256e-02, 
@@ -56,11 +58,32 @@ nbody_params =[ 2.27798546e+02,  7.25405874e+00,  5.39392010e+04,  1.71866112e-0
 #                9.72945632e-02,  1.32194117e-01, -5.29072002e-01, 0., 0., 1, 2.428]#-7.68527759e-03] 
 
 # Neg log likelihood jitter fit:
-fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
-              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
-              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
+prev_params = [ 2.27510047e+02,  7.21459722e+00, 5.39394197e+04, -1.45510376e-02, -1.91998583e-01,
+              3.44196007e+02,  1.80943200e+01,  5.47060928e+04, 9.38174624e-02,  1.11054397e-01,
+              -1.80048668e-01, -1.44155418e+00, 1.40493043e+00,
               1.00000000e+00,
-              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
+              1.46046278e+00,  6.96508946e-01, 3.45217643e+00]
+
+# LI ET AL. 2022 PARAMS
+li_params = [225.34, 7.26, radvel.orbit.timeperi_to_timetrans(53375, 225.34, 0.07, np.deg2rad(92)), np.sqrt(0.07) * np.cos(np.deg2rad(92)), np.sqrt(0.07) * np.sin(np.deg2rad(92)),
+             345.76, 18.17, radvel.orbit.timeperi_to_timetrans(53336, 345.76, 0.01, np.deg2rad(276)), np.sqrt(0.01) * np.cos(np.deg2rad(276)), np.sqrt(0.01) * np.cos(np.deg2rad(276)),
+            -1.80048668e-01, -1.44155418e+00, 1.40493043e+00,
+              1.00000000e+00,
+              1.46046278e+00,  6.96508946e-01, 3.45217643e+00]
+
+# TRIFONOV PARAMS
+trifonov_params = [226.57, 7.29, radvel.orbit.timeperi_to_timetrans(52902, 226.57, 0.0796, np.deg2rad(244.44)), np.sqrt(0.0796) * np.cos(np.deg2rad(244.44)), np.sqrt(0.0796) * np.sin(np.deg2rad(244.44)),
+              344.66, 18.21, radvel.orbit.timeperi_to_timetrans(52920, 344.66, 0.002, np.deg2rad(20.342)), np.sqrt(0.0002) * np.cos(np.deg2rad(20.342)), np.sqrt(0.0002) * np.sin(np.deg2rad(20.342)),
+              0.041, -3.348, 2.708,
+              np.sin(np.deg2rad(83.7597)),
+              1.437, 0.763, 3.136]
+
+# UPDATED TRIFONOV PARAMS
+fit_params = [2.27864638e+02, 7.19443190e+00, 5.27993627e+04, -7.26813509e-03, -2.15682280e-01, 
+              3.44040155e+02, 1.82002701e+01, 5.29855398e+04, 1.11463111e-01, 3.12038118e-02, 
+              -1.41032815e-01, -2.93573404e+00, 1.65809757e+00, 
+              1., 
+              1.40629135e+00, 8.26926669e-01, 3.03850222e+00]
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -206,8 +229,8 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     
@@ -254,10 +277,9 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
     
     return np.concatenate((rv_backward, rv_forward))
 
-
 # OPTIMIZE OVER NEGATIVE LOG LIKELIHOOD INSTEAD OF JUST CHI SQUARED
 
-def neg_log_likelihood(params, data = hd_data):
+def neg_log_likelihood(params, time_base = obs_time_base, data = hd_data, num_planets = 2):
     """
     Gets the negative log-likelihood (including a jitter term!) for use with scipy.optimize.minimze
     
@@ -267,26 +289,44 @@ def neg_log_likelihood(params, data = hd_data):
     obs_y = data.RV_mlc_nzp  # observed RVs
     
     # inclination not handled sparately
-    # inclination = np.arcsin(params[-2])  # inclination is np.arcsin of the second to last parameter
+    # inclination = np.arcsin(params[-4])  # inclination is np.arcsin of the second to last parameter
     
-    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = obs_time_base)  # RVs from the rebound simulation
+    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
 
     conditions = [data.target == 'HARPS1', data.target == 'HARPS2', data.target == 'HIRES']  # conditions are harps1, harps2 or hires
+
+    rv_offsets = params[5 * num_planets:5 * num_planets + 3]  # rv_offsets for HARPS1, HARPS2 and HIRES, in that order
     jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
     
-    # get the jitter values for the corresponding data points
+    # get the jitter and rv values for the corresponding data points
+    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
     jitter = np.select(conditions, jitters, default=np.nan)
+    # print(rv_offset, jitter)
 
     # compute the log-likelihood
-    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
-                                   + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
-    
-    # log_likelihood = -1/2 * np.sum(np.log(variance) + ((obs_y - synth_y) ** 2/variance))
-    
+    #### OLD
+    # log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
+    #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
+
+    #### LI ET AL. 2022 VERSION (NEW)
+    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.log(np.sqrt(2 * np.pi * sigma_z2))
+    # log_likelihood = -1/2 * np.sum(np.log(variance) + ((obs_y - synth_y) ** 2/variance))    
+    # print(-1/2 * np.sum(((obs_y - rv_offset - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))))
+    # print(-log_likelihood)
     return -log_likelihood  # negative since we are trying to minimize the negative log likelihood
 
 # AGAIN, OPTIMIZE USING OPTIMIZE.MINIMIZE WITH THE LOG LIKELIHOOD INSTEAD OF JUST NORMAL LEAST-SQUARES
+
+def ecc_con1(params):
+    return 1 - (params[3] ** 2 + params[4] ** 2)
+
+def ecc_con2(params):
+    return 1 - (params[8] ** 2 + params[9] ** 2)
+
+cons = ({'type': 'ineq', 'fun': ecc_con1}, 
+        {'type': 'ineq', 'fun': ecc_con2})
 
 # bounds of (0, 1) for sin(i), everything else can vary however
 bounds = ((None, None), (None, None), (None, None), (None, None), (None, None), 
@@ -294,9 +334,14 @@ bounds = ((None, None), (None, None), (None, None), (None, None), (None, None),
           (None, None), (None, None), (None, None),
           (0, 1), 
           (None, None), (None, None), (None, None))
-
+#### BFGS and L-BFGS do not work without hacky fixes (returns RV array full of nans (ecc greater than 1))
+#### Nelder-Mead seems to work...
 best_fit_jitter = optimize.minimize(neg_log_likelihood, x0=np.array(fit_params), method='Nelder-Mead', 
-                                    bounds=bounds, options={'maxiter': np.inf, 'maxfev': np.inf})  # optimization
+                                    bounds=bounds, constraints=cons, options={'maxiter': 1000000000000, 
+                                                                              'maxfev': 1000000000000, 
+                                                                              # 'ftol': 1.e-7
+                                                                             }
+                                   )  # optimization
 
 print(f'original guess:\n{np.array(fit_params)}\n\noptimization with jitter:\n{best_fit_jitter.x}\n\n')
 
@@ -326,29 +371,43 @@ def log_prior(params, e_max=0.8, sin_i_min=0.076):
         return -np.inf  # log prior, so ln(0) = -infinity
 
 # LOG LIKELIHOOD
-def log_likelihood(params, data = hd_data):
+def log_likelihood(params, time_base = obs_time_base, data = hd_data, num_planets = 2):
     """
     Gets the log-likelihood (negative of the negative log likelihood) (including a jitter term!) for use with scipy.optimize.minimze
     
     Implements the log likelihood using the same method as neg_log_likelihood above
     
     """
-    # get observed ys, synthetic ys, and errors
     obs_y = data.RV_mlc_nzp  # observed RVs
-    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = obs_time_base)  # RVs from the rebound simulation
+    
+    # inclination not handled sparately
+    # inclination = np.arcsin(params[-4])  # inclination is np.arcsin of the second to last parameter
+    
+    synth_y = get_rvs(params, data.target, data.BJD, 'ias15', time_base = time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
 
-    # get numpy array of jitters corresponding to each instrument
     conditions = [data.target == 'HARPS1', data.target == 'HARPS2', data.target == 'HIRES']  # conditions are harps1, harps2 or hires
-    jitters = params[-3:]  # jitters
-    # get the jitter values for the corresponding data points
-    jitter = np.select(conditions, jitters, default=np.nan)
 
-    # compute log likelihood
-    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
-                               + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
+    rv_offsets = params[5 * num_planets:5 * num_planets + 3]  # rv_offsets for HARPS1, HARPS2 and HIRES, in that order
+    jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
     
-    return log_likelihood  # positive in this case, unlike the other
+    # get the jitter and rv values for the corresponding data points
+    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
+    jitter = np.select(conditions, jitters, default=np.nan)
+    # print(rv_offset, jitter)
+
+    # compute the log-likelihood
+    #### OLD
+    # log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/(obs_yerr ** 2 + jitter ** 2) 
+    #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
+
+    #### LI ET AL. 2022 VERSION (NEW)
+    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.log(np.sqrt(2 * np.pi * sigma_z2))
+    # log_likelihood = -1/2 * np.sum(np.log(variance) + ((obs_y - synth_y) ** 2/variance))    
+    # print(-1/2 * np.sum(((obs_y - rv_offset - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))))
+    # print(-log_likelihood)
+    return log_likelihood  # positive
 
 # LOG PROBABILITY
 def log_probability(params):
@@ -360,12 +419,12 @@ def log_probability(params):
 # DO LEAST-SQUARES OPTIMIZATION HERE TO GET A JACOBIAN FOR THE NEXT PART
 # The actual least-squares "fit" will probably be slightly worse compared to the fit using negative log-likelihodo (because it doesn't take into account jitter), but hopefully the jacobian is close enough to just use with the original best fit (the one computed using negloglikelihood instead of least-squares) to get a decent starting position for the walkers
 
-def get_nbody_resids(params, integrator, data = hd_data):
+def get_nbody_resids(params, integrator, time_base = obs_time_base, data = hd_data):
     """
     Gets the normalized residuals for the n-body fit with REBOUND
     """
     obs_y = data.RV_mlc_nzp  # observed RVs
-    synth_y = get_rvs(params, data.target, data.BJD, integrator, time_base=obs_time_base)  # RVs from the rebound simulation
+    synth_y = get_rvs(params, data.target, data.BJD, integrator, time_base=time_base)  # RVs from the rebound simulation
     obs_yerr = data.e_RV_mlc_nzp  # y errors
     return (obs_y - synth_y) / obs_yerr  # return normalized residuals
 

@@ -181,8 +181,8 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     
@@ -263,8 +263,8 @@ def get_resonant_angles(params, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     

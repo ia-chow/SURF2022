@@ -181,8 +181,8 @@ def get_rvs(params, instrument, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     
@@ -263,8 +263,8 @@ def get_resonant_angles(params, times, integrator, time_base, auday_ms = AUDAY_M
 
     times = pd.Series(times)  # convert to series if not already
     
-    forward_times = times[times - obs_time_base >= 0]
-    backward_times = times[times - obs_time_base < 0]
+    forward_times = times[times - time_base >= 0]
+    backward_times = times[times - time_base < 0]
     forward_indices = forward_times.index
     backward_indices = backward_times.index
     
@@ -298,8 +298,8 @@ def get_resonant_angles(params, times, integrator, time_base, auday_ms = AUDAY_M
     return resonant_angles_inner, resonant_angles_outer
 
 # import data
-# cluster_data = h5py.File('../mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import data
-cluster_data = h5py.File('../mcmc_hd45364_cluster_everything.h5', 'r')  # import data
+cluster_data = h5py.File('../mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import data (PENALIZED)
+# cluster_data = h5py.File('../mcmc_hd45364_cluster_everything.h5', 'r')  # import data (UNPENALIZED)
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
 
 burnin = 200  # number of sampels to discard for burn-in
@@ -318,6 +318,7 @@ sim1 = get_sim_from_params(fit_params, 'ias15', obs_time_base)  # start sim
 times = np.linspace(0, 500 * sim1.particles[1].P, int(5e3)) + sim1.t   # angle times
 
 # multiprocessing
+#### takes about 20 minutes to run on 48 nodes on saturn
 pool = multiprocessing.Pool()
 res_samples = np.array(pool.starmap(get_resonant_angles, zip(samples[res_sample_indices][:,0], 
     (np.repeat(times, n_res_samples).reshape(-1, n_res_samples)).T, 
@@ -329,4 +330,5 @@ pool.close()
 pool.join()
 
 # save
-np.save('res_samples', res_samples)
+np.save('res_samples_01', res_samples)  # this is for everything_with_libration_penalty_variable_1.h5 (i.e. penalized)
+# np.save('res_samples', res_samples)  # this is for clsuter_everything (i.e. unpenalized)
