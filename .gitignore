@@ -16,3 +16,5 @@ __pycache__/
 **/rv_samples2.npy
 **/res_samples.npy
 **/res_samples_01.npy
+# ignore the rebound_simulations folder if it exists
+**/rebound_simulations
