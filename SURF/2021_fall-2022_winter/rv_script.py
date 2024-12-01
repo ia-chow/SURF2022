@@ -18,12 +18,11 @@ MAY_1_2015 = 57143.5  # barycentric julian date for May 1, 2015 (the date of the
 # 57143.5 is BJD for May 1, 2015
 # 57173.5 is BJD for May 31, 2015
 
-fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
-              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
-              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
-              1.00000000e+00,
-              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
-
+fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
+              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
+              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
+              1.00000000e+00,  
+              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
 # harps
 hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
 # giant outlier at position 116 in the data (found manually earlier) which we remove
@@ -44,7 +43,8 @@ hd_data.reset_index(drop=True, inplace=True)
 
 ## CONSTANTS:
 
-STAR_MASS = 920  # 920 jupiter masses
+# STAR_MASS = 920  # 920 jupiter masses
+STAR_MASS = 859
 G = 2.825e-7  # converting G to jupiter masses, au, and days
 AUDAY_MS = 1.731e6  # conversion factor for au/day to m/s
 

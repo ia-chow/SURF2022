@@ -47,13 +47,14 @@ flat_samples = samples[n_burn_in:].reshape(-1, samples[n_burn_in:].shape[-1])
 # functions for the d/k value computations and other setup
 
 #Least squares fit: 
-fit_params = [2.27859008e+02, 7.20396587e+00,  5.39386707e+04, -7.17270858e-03, -2.13670237e-01,
-              3.44028221e+02, 1.82216479e+01,  5.47055869e+04, 1.14530821e-01,  3.81765820e-02,
-              -1.38087163e-01, -2.89290650e+00, 1.70788055e+00, 
-              1.00000000e+00,
-              2.15025156e+00, 1.48605174e+00, 4.42809302e+00] 
+fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
+              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
+              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
+              1.00000000e+00,  
+              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
 
-STAR_MASS = 920  # 920 jupiter masses
+# STAR_MASS = 920  # 920 jupiter masses
+STAR_MASS = 859.  
 G = 2.825e-7  # converting G to jupiter masses, au, and days
 AUDAY_MS = 1.731e6  # conversion factor for au/day to m/s
 

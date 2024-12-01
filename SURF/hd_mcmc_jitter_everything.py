@@ -79,11 +79,11 @@ trifonov_params = [226.57, 7.29, radvel.orbit.timeperi_to_timetrans(52902, 226.5
               1.437, 0.763, 3.136]
 
 # UPDATED TRIFONOV PARAMS
-fit_params = [2.27864638e+02, 7.19443190e+00, 5.27993627e+04, -7.26813509e-03, -2.15682280e-01, 
-              3.44040155e+02, 1.82002701e+01, 5.29855398e+04, 1.11463111e-01, 3.12038118e-02, 
-              -1.41032815e-01, -2.93573404e+00, 1.65809757e+00, 
-              1., 
-              1.40629135e+00, 8.26926669e-01, 3.03850222e+00]
+fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
+              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
+              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
+              1.00000000e+00,  
+              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -91,7 +91,8 @@ fit_params = [2.27864638e+02, 7.19443190e+00, 5.27993627e+04, -7.26813509e-03, -
 
 ## CONSTANTS:
 
-STAR_MASS = 920  # 920 jupiter masses
+# STAR_MASS = 920  # 920 jupiter masses
+STAR_MASS = 859.
 G = 2.825e-7  # converting G to jupiter masses, au, and days
 AUDAY_MS = 1.731e6  # conversion factor for au/day to m/s
 
