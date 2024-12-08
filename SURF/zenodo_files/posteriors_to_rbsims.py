@@ -141,7 +141,6 @@ for i, uninf_chain in enumerate(np.transpose(uninf_samples, axes=[1, 0, 2])):
 uninf_pool.close()
 uninf_pool.join()
 
-
 # Resonance-weighted priors:
 rw_pool = multiprocessing.Pool(multiprocessing.cpu_count() - 1) 
 rw_path_to_save = './rebound_simulations/rw_prior/'
