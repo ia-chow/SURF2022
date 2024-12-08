@@ -18,14 +18,15 @@ MAY_1_2015 = 57143.5  # barycentric julian date for May 1, 2015 (the date of the
 # 57143.5 is BJD for May 1, 2015
 # 57173.5 is BJD for May 31, 2015
 
-fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
-              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
-              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
-              1.00000000e+00,  
-              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
+fit_params = [ 2.27879597e+02,  7.26670196e+00,  5.27997039e+04, -4.33392738e-02,
+       -2.20477279e-01,  3.44061366e+02,  1.82074627e+01,  5.29858704e+04,
+        9.68685024e-02,  2.30277928e-02, -3.66896966e-02, -3.32570314e+00,
+        1.74545697e+00,  1.00000000e+00,  1.40646019e+00,  6.94463892e-01,
+        3.00077415e+00]
 
 # harps
-hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+# hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+hd_data_harps = pd.read_csv('HD45364_HARPS_RVBank_ver02.csv', sep=',')  # updated version
 # giant outlier at position 116 in the data (found manually earlier) which we remove
 hd_data_harps.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
@@ -299,8 +300,8 @@ def get_resonant_angles(params, times, integrator, time_base, auday_ms = AUDAY_M
     return resonant_angles_inner, resonant_angles_outer
 
 # import data
-# cluster_data = h5py.File('../mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import data (PENALIZED)
-cluster_data = h5py.File('../mcmc_hd45364_cluster_everything.h5', 'r')  # import data (UNPENALIZED)
+cluster_data = h5py.File('../mcmc_hd45364_everything_with_libration_penalty_variable_1.h5', 'r')  # import data (PENALIZED)
+# cluster_data = h5py.File('../mcmc_hd45364_cluster_everything.h5', 'r')  # import data (UNPENALIZED)
 accepted, samples, log_prob = np.array(cluster_data['mcmc']['accepted']), np.array(cluster_data['mcmc']['chain']), np.array(cluster_data['mcmc']['log_prob'])
 
 burnin = 200  # number of sampels to discard for burn-in
@@ -331,5 +332,5 @@ pool.close()
 pool.join()
 
 # save
-# np.save('res_samples_01', res_samples)  # this is for everything_with_libration_penalty_variable_1.h5 (i.e. penalized)
-np.save('res_samples', res_samples)  # this is for clsuter_everything (i.e. unpenalized)
+np.save('res_samples_01', res_samples)  # this is for everything_with_libration_penalty_variable_1.h5 (i.e. penalized)
+# np.save('res_samples', res_samples)  # this is for clsuter_everything (i.e. unpenalized)

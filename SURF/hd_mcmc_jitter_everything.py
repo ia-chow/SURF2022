@@ -26,7 +26,8 @@ MAY_1_2015 = 57143.5  # barycentric julian date for May 1, 2015 (the date of the
 # 57173.5 is BJD for May 31, 2015
 
 # harps
-hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+# hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+hd_data_harps = pd.read_csv('HD45364_HARPS_RVBank_ver02.csv', sep=',')  # updated version
 # giant outlier at position 116 in the data (found manually earlier) which we remove
 hd_data_harps.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
@@ -79,11 +80,11 @@ trifonov_params = [226.57, 7.29, radvel.orbit.timeperi_to_timetrans(52902, 226.5
               1.437, 0.763, 3.136]
 
 # UPDATED TRIFONOV PARAMS
-fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
-              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
-              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
-              1.00000000e+00,  
-              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
+fit_params = [ 2.27879597e+02,  7.26670196e+00,  5.27997039e+04, -4.33392738e-02,
+       -2.20477279e-01,  3.44061366e+02,  1.82074627e+01,  5.29858704e+04,
+        9.68685024e-02,  2.30277928e-02, -3.66896966e-02, -3.32570314e+00,
+        1.74545697e+00,  1.00000000e+00,  1.40646019e+00,  6.94463892e-01,
+        3.00077415e+00]
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -301,7 +302,7 @@ def neg_log_likelihood(params, time_base = obs_time_base, data = hd_data, num_pl
     jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
     
     # get the jitter and rv values for the corresponding data points
-    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
+    # rv_offset = np.select(conditions, rv_offsets, default=np.nan)
     jitter = np.select(conditions, jitters, default=np.nan)
     # print(rv_offset, jitter)
 
@@ -311,8 +312,8 @@ def neg_log_likelihood(params, time_base = obs_time_base, data = hd_data, num_pl
     #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
 
     #### LI ET AL. 2022 VERSION (NEW)
-    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
-    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.log(np.sqrt(2 * np.pi * sigma_z2))
+    # sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) # + np.log(np.sqrt(2 * np.pi * sigma_z2))
     # log_likelihood = -1/2 * np.sum(np.log(variance) + ((obs_y - synth_y) ** 2/variance))    
     # print(-1/2 * np.sum(((obs_y - rv_offset - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))))
     # print(-log_likelihood)
@@ -393,7 +394,7 @@ def log_likelihood(params, time_base = obs_time_base, data = hd_data, num_planet
     jitters = params[-3:]  # jitters for HARPS1, HARPS2 and HIRES, in that order
     
     # get the jitter and rv values for the corresponding data points
-    rv_offset = np.select(conditions, rv_offsets, default=np.nan)
+    # rv_offset = np.select(conditions, rv_offsets, default=np.nan)
     jitter = np.select(conditions, jitters, default=np.nan)
     # print(rv_offset, jitter)
 
@@ -403,8 +404,8 @@ def log_likelihood(params, time_base = obs_time_base, data = hd_data, num_planet
     #                                + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2))))
 
     #### LI ET AL. 2022 VERSION (NEW)
-    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
-    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.log(np.sqrt(2 * np.pi * sigma_z2))
+    # sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood = -1/2 * np.sum(((obs_y - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))) - np.sum(np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) # + np.log(np.sqrt(2 * np.pi * sigma_z2))
     # log_likelihood = -1/2 * np.sum(np.log(variance) + ((obs_y - synth_y) ** 2/variance))    
     # print(-1/2 * np.sum(((obs_y - rv_offset - synth_y) ** 2)/((obs_yerr ** 2 + jitter ** 2))))
     # print(-log_likelihood)

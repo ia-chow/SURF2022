@@ -32,7 +32,8 @@ MAY_1_2015 = 57143.5  # barycentric julian date for May 1, 2015 (the date of the
 # 57173.5 is BJD for May 31, 2015
 
 # harps
-hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+# hd_data_harps = pd.read_csv('hd45364_rvs.csv', sep = ';')
+hd_data_harps = pd.read_csv('HD45364_HARPS_RVBank_ver02.csv', sep=',')  # updated version
 # giant outlier at position 116 in the data (found manually earlier) which we remove
 hd_data_harps.drop(116, inplace=True)  # drop the row and keep the df in place
 # subtract 2.4e6 from all the rows in the data
@@ -85,11 +86,11 @@ trifonov_params = [226.57, 7.29, radvel.orbit.timeperi_to_timetrans(52902, 226.5
               1.437, 0.763, 3.136]
 
 # UPDATED TRIFONOV PARAMS
-fit_params = [2.27868543e+02,  7.19389773e+00,  5.27994216e+04, -1.44146514e-02, -2.15812220e-01,  
-              3.44039428e+02,  1.82044907e+01,  5.29855411e+04, 1.12325815e-01,  3.27182136e-02, 
-              -1.38624205e-01, -2.93870325e+00, 1.65498077e+00,  
-              1.00000000e+00,  
-              1.40574001e+00,  8.28755145e-01, 3.04386163e+00]
+fit_params = [2.27879590e+02,  7.26670160e+00,  5.27997040e+04, -4.33386844e-02,
+       -2.20477255e-01,  3.44061367e+02,  1.82074511e+01,  5.29858704e+04,
+        9.68672855e-02,  2.30292860e-02, -3.66891824e-02, -3.32569568e+00,
+        1.74545959e+00,  1.00000000e+00,  1.40646262e+00,  6.94455499e-01,
+        3.00076641e+00]
 
 # this includes jitter! the last term is taken from the post params with pickle (nbody_params in the original ipynb)
 
@@ -382,8 +383,8 @@ def neg_log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500,
     A_lib_normalized_resids_2 = np.array([(angle - np.pi)/(Alib * np.sqrt(len(angle2))) for angle in angle2])  # since outer planet oscillates around pi
 
     # after computing jitter_normalized_resids and A_lib_resids_1 and 2, we finally have the modified log-likelihood as:
-    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
-    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) - np.log(np.sqrt(2 * np.pi * sigma_z2)) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
+    # sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
 
     # and return the modified log_likelihood:
     return -log_likelihood_pen  # negative since we are trying to minimize the negative log likelihood
@@ -514,8 +515,8 @@ def log_likelihood(params, Alib=alib, time_base=obs_time_base, nperiods=500, nsa
     A_lib_normalized_resids_2 = np.array([(angle - np.pi)/(Alib * np.sqrt(len(angle2))) for angle in angle2])  # since outer planet oscillates around pi
 
     # after computing jitter_normalized_resids and A_lib_resids_1 and 2, we finally have the modified log-likelihood as:
-    sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
-    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) - np.log(np.sqrt(2 * np.pi * sigma_z2)) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
+    # sigma_z2 = 1/(np.sum(1/(obs_yerr ** 2 + jitter ** 2)))
+    log_likelihood_pen = -1/2 * (np.sum((jitter_normalized_resids ** 2) + np.log(np.sqrt(2 * np.pi * (obs_yerr ** 2 + jitter ** 2)))) + np.sum(A_lib_normalized_resids_1 ** 2) + np.sum(A_lib_normalized_resids_2 ** 2))
 
     # and return the modified log_likelihood:
     return log_likelihood_pen  # positive
