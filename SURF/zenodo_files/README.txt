@@ -23,13 +23,13 @@ The data is saved in a group named 'mcmc' that contains three datasets: 'accepte
 
 The parameters of each posterior sample are listed in the order:
 
-        k_b, P_c, T_b, sqrt(e_b) * cos(omega_b), sqrt(e_b) * sin(omega_b), 
-        k_c, P_b, T_c, sqrt(e_c) * cos(omega_c), sqrt(e_c) * sin(omega_c), 
+        P_b, k_b, T_b, sqrt(e_b) * cos(omega_b), sqrt(e_b) * sin(omega_b), 
+        P_c, k_c, T_c, sqrt(e_c) * cos(omega_c), sqrt(e_c) * sin(omega_c), 
         gamma_HARPS1, gamma_HARPS2, gamma_HIRES, 
         sin(I), 
         jit_HARPS1, jit_HARPS2, jit_HIRES
 
-where k_i is the RV semi-amplitude in m s^-1, P_i is the orbital period in days, T_i is the time of conjunction 
+where P_i is the orbital period in days, k_i is the RV semi-amplitude in m s^-1, T_i is the time of conjunction 
 in BJD - 2.4 * 10^6 days, e_i is the eccentricity, and omega_i is the argument of pericenter for the ith planet.
 gamma_j is the RV offset in m s^-1 and jit_j is the instrumental jitter in m s^-1 for the jth instrument. 
 I is the inclination of the planets' orbital planes with respect to the sky plane, assuming they are coplanar.
