@@ -33,6 +33,8 @@ where k_i is the RV semi-amplitude in m s^-1, P_i is the orbital period in days,
 in BJD - 2.4 * 10^6 days, e_i is the eccentricity, and omega_i is the argument of pericenter for the ith planet.
 gamma_j is the RV offset in m s^-1 and jit_j is the instrumental jitter in m s^-1 for the jth instrument. 
 I is the inclination of the planets' orbital planes with respect to the sky plane, assuming they are coplanar.
+The planets' orbits are specified at a reference epoch of t_0 = 54422.79 + 2.4 * 10^6 BJD. The host star's mass
+is fixed at 0.82 solar masses.
 
 - 'log_prob' is a 50000 x 50 array containing the corresponding log-probability of each posterior sample in 'samples'. 
 For the file 'hd45364_mcmc_uninformative_model_posteriors.h5', this is equal to the log-likelihood 
